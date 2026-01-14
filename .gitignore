@@ -1,1 +1,13 @@
-.playwright-mcp
+# Dependencies
+node_modules/
+
+# Temp files
+.DS_Store
+*.log
+
+# Playwright/testing
+.playwright-mcp/
+
+# IDE
+.idea/
+.vscode/

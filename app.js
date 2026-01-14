@@ -1,16 +1,12 @@
 // FFmpresto - Video Compression Tool
-// Uses ffmpeg.wasm 0.11.x for in-browser video processing
-
-const { createFFmpeg, fetchFile } = FFmpeg;
+// Uses native FFmpeg via server for ultra-fast compression
 
 // State
-let ffmpeg = null;
 let selectedFile = null;
 let currentPreset = 'balanced';
 let selectedCrf = 23;
-let selectedFps = 0; // 0 = original
-let selectedScale = 0; // 0 = original
-let compressedBlob = null;
+let currentJobId = null;
+let pollInterval = null;
 
 // Preset configurations
 const PRESETS = {
@@ -18,15 +14,15 @@ const PRESETS = {
     crf: 23,
     fps: 0,
     scale: 0,
-    maxSize: null
+    preset: 'medium'
   },
   ai: {
     crf: 28,
     fps: 1,
     scale: 1280,
-    maxSize: 400
+    preset: 'fast'
   },
-  custom: null // Uses manual settings
+  custom: null
 };
 
 // DOM Elements
@@ -44,6 +40,7 @@ const qualityBtns = document.querySelectorAll('.quality-btn');
 const fpsSelect = document.getElementById('fpsSelect');
 const scaleSelect = document.getElementById('scaleSelect');
 const maxSizeInput = document.getElementById('maxSize');
+const includeAudioCheckbox = document.getElementById('includeAudio');
 const compressBtn = document.getElementById('compressBtn');
 const progress = document.getElementById('progress');
 const progressStatus = document.getElementById('progressStatus');
@@ -72,48 +69,22 @@ function getOutputFileName(inputName) {
   return parts.join('.') + suffix + '.mp4';
 }
 
-// Initialize FFmpeg
-async function initFFmpeg() {
-  if (ffmpeg && ffmpeg.isLoaded()) return ffmpeg;
-  
-  ffmpeg = createFFmpeg({
-    log: true,
-    progress: ({ ratio }) => {
-      const percent = Math.round(ratio * 100);
-      progressPercent.textContent = percent + '%';
-      progressFill.style.width = percent + '%';
-    }
-  });
-  
-  await ffmpeg.load();
-  
-  return ffmpeg;
-}
-
 // Preset Management
 function setPreset(preset) {
   currentPreset = preset;
   
-  // Update UI
   presetBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.preset === preset);
   });
   
-  // Show/hide relevant sections
   aiPresetInfo.classList.toggle('hidden', preset !== 'ai');
   customOptions.classList.toggle('hidden', preset !== 'custom');
   
-  // Apply preset values
   if (preset === 'balanced') {
     selectedCrf = PRESETS.balanced.crf;
-    selectedFps = PRESETS.balanced.fps;
-    selectedScale = PRESETS.balanced.scale;
   } else if (preset === 'ai') {
     selectedCrf = PRESETS.ai.crf;
-    selectedFps = PRESETS.ai.fps;
-    selectedScale = PRESETS.ai.scale;
   }
-  // For 'custom', values are set manually by the user
 }
 
 // File Selection
@@ -136,7 +107,12 @@ function handleFileSelect(file) {
 
 function resetToDropZone() {
   selectedFile = null;
-  compressedBlob = null;
+  currentJobId = null;
+  
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
   
   dropZone.classList.remove('hidden');
   fileInfo.classList.add('hidden');
@@ -147,137 +123,157 @@ function resetToDropZone() {
   fileInput.value = '';
 }
 
-// Get current settings based on preset
+// Get current settings
 function getCurrentSettings() {
+  const includeAudio = includeAudioCheckbox.checked;
+  const baseSettings = {
+    noAudio: !includeAudio
+  };
+  
   if (currentPreset === 'custom') {
     return {
+      ...baseSettings,
       crf: selectedCrf,
       fps: parseInt(fpsSelect.value),
       scale: parseInt(scaleSelect.value),
-      maxSize: maxSizeInput.value ? parseInt(maxSizeInput.value) : null
+      preset: 'medium'
     };
   } else if (currentPreset === 'ai') {
-    return PRESETS.ai;
+    return {
+      ...PRESETS.ai,
+      ...baseSettings
+    };
   } else {
-    return PRESETS.balanced;
+    return {
+      ...PRESETS.balanced,
+      ...baseSettings
+    };
   }
 }
 
-// Compression
+// Compression via server (streaming upload)
 async function compressVideo() {
   if (!selectedFile) return;
   
-  const settings = getCurrentSettings();
+  const compressionSettings = getCurrentSettings();
   
   // Show progress
-  document.getElementById('settings').classList.add('hidden');
+  settings.classList.add('hidden');
   progress.classList.remove('hidden');
-  progressStatus.textContent = 'Chargement de FFmpeg...';
+  progressStatus.textContent = 'Envoi de la vidéo...';
   progressPercent.textContent = '0%';
   progressFill.style.width = '0%';
   
   try {
-    // Initialize FFmpeg
-    await initFFmpeg();
-    progressStatus.textContent = 'Préparation...';
+    // Create XMLHttpRequest for upload progress tracking
+    const xhr = new XMLHttpRequest();
     
-    // Get input file extension
-    const inputExt = selectedFile.name.split('.').pop().toLowerCase();
-    const inputFileName = `input.${inputExt}`;
-    const outputFileName = 'output.mp4';
+    // Track upload progress
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        progressStatus.textContent = `Envoi: ${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`;
+        progressPercent.textContent = percent + '%';
+        progressFill.style.width = percent + '%';
+      }
+    };
     
-    // Write file to FFmpeg virtual filesystem
-    ffmpeg.FS('writeFile', inputFileName, await fetchFile(selectedFile));
+    // Handle response
+    const uploadPromise = new Promise((resolve, reject) => {
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (e) {
+            reject(new Error('Invalid response'));
+          }
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+    });
+    
+    // Send file directly (streaming)
+    xhr.open('POST', '/api/compress');
+    xhr.setRequestHeader('X-Filename', selectedFile.name);
+    xhr.setRequestHeader('X-Settings', JSON.stringify(compressionSettings));
+    xhr.send(selectedFile);
+    
+    const { id } = await uploadPromise;
+    currentJobId = id;
     
     progressStatus.textContent = currentPreset === 'ai' 
-      ? 'Optimisation pour IA (1 FPS)...' 
-      : 'Compression en cours...';
+      ? 'Optimisation IA (FFmpeg natif)...' 
+      : 'Compression (FFmpeg natif)...';
+    progressPercent.textContent = '0%';
+    progressFill.style.width = '0%';
     
-    // Build FFmpeg command
-    const ffmpegArgs = ['-i', inputFileName];
-    
-    // Video filters
-    const filters = [];
-    
-    // FPS filter
-    if (settings.fps > 0) {
-      filters.push(`fps=${settings.fps}`);
-    }
-    
-    // Scale filter
-    if (settings.scale > 0) {
-      filters.push(`scale=${settings.scale}:-2`);
-    }
-    
-    // Apply filters if any
-    if (filters.length > 0) {
-      ffmpegArgs.push('-vf', filters.join(','));
-    }
-    
-    // Video codec settings
-    ffmpegArgs.push('-c:v', 'libx264');
-    ffmpegArgs.push('-crf', settings.crf.toString());
-    ffmpegArgs.push('-preset', 'medium');
-    
-    // Audio settings (remove audio for AI preset to save space)
-    if (currentPreset === 'ai') {
-      ffmpegArgs.push('-an'); // No audio for AI
-    } else {
-      ffmpegArgs.push('-c:a', 'aac');
-      ffmpegArgs.push('-b:a', '128k');
-    }
-    
-    // Output
-    ffmpegArgs.push('-y', outputFileName);
-    
-    console.log('FFmpeg args:', ffmpegArgs);
-    
-    // Execute
-    await ffmpeg.run(...ffmpegArgs);
-    
-    // Read output file
-    const data = ffmpeg.FS('readFile', outputFileName);
-    compressedBlob = new Blob([data.buffer], { type: 'video/mp4' });
-    
-    // Cleanup
-    ffmpeg.FS('unlink', inputFileName);
-    ffmpeg.FS('unlink', outputFileName);
-    
-    // Show results
-    showResults();
+    // Poll for compression progress
+    pollInterval = setInterval(async () => {
+      try {
+        const progressRes = await fetch(`/api/progress/${id}`);
+        const data = await progressRes.json();
+        
+        if (data.status === 'uploading') {
+          progressStatus.textContent = 'Réception par le serveur...';
+          progressPercent.textContent = data.uploadProgress + '%';
+          progressFill.style.width = data.uploadProgress + '%';
+        } else if (data.status === 'processing') {
+          progressStatus.textContent = currentPreset === 'ai' 
+            ? 'Optimisation IA (FFmpeg natif)...' 
+            : 'Compression (FFmpeg natif)...';
+          progressPercent.textContent = data.progress + '%';
+          progressFill.style.width = data.progress + '%';
+        } else if (data.status === 'complete') {
+          clearInterval(pollInterval);
+          pollInterval = null;
+          showResults(data.inputSize, data.outputSize);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          pollInterval = null;
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        if (err.message !== 'Job not found') {
+          console.error('Progress poll error:', err);
+        }
+      }
+    }, 500);
     
   } catch (error) {
     console.error('Compression error:', error);
     alert('Erreur lors de la compression: ' + error.message);
     progress.classList.add('hidden');
-    document.getElementById('settings').classList.remove('hidden');
+    settings.classList.remove('hidden');
+    
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
   }
 }
 
-function showResults() {
+function showResults(inputSize, outputSize) {
   progress.classList.add('hidden');
   result.classList.remove('hidden');
   
-  const origSize = selectedFile.size;
-  const compSize = compressedBlob.size;
-  const reductionPercent = Math.round((1 - compSize / origSize) * 100);
+  const reductionPercent = Math.round((1 - outputSize / inputSize) * 100);
   
-  originalSize.textContent = formatFileSize(origSize);
-  compressedSize.textContent = formatFileSize(compSize);
+  originalSize.textContent = formatFileSize(inputSize);
+  compressedSize.textContent = formatFileSize(outputSize);
   reduction.textContent = reductionPercent > 0 ? reductionPercent + '%' : '0%';
 }
 
 function downloadCompressed() {
-  if (!compressedBlob) return;
+  if (!currentJobId) return;
   
-  const url = URL.createObjectURL(compressedBlob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = `/api/download/${currentJobId}`;
   a.download = getOutputFileName(selectedFile.name);
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 // Event Listeners
@@ -316,7 +312,7 @@ presetBtns.forEach(btn => {
   });
 });
 
-// Quality selection (for custom preset)
+// Quality selection
 qualityBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     qualityBtns.forEach(b => b.classList.remove('active'));
@@ -334,7 +330,7 @@ downloadBtn.addEventListener('click', downloadCompressed);
 // New file button
 newFileBtn.addEventListener('click', resetToDropZone);
 
-// Initialize with balanced preset
+// Initialize
 setPreset('balanced');
 
-console.log('⚡ FFmpresto loaded');
+console.log('⚡ FFmpresto loaded (Native FFmpeg mode)');
