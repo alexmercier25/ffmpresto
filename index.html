@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpresto - Compression Vidéo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <h1>FFmpresto</h1>
+      </div>
+      <p class="tagline">Compresse tes vidéos en un éclair</p>
+    </header>
+
+    <main>
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <div class="drop-content">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="drop-text">Glisse ta vidéo ici</p>
+          <p class="drop-subtext">ou clique pour sélectionner</p>
+          <input type="file" id="fileInput" accept="video/*" hidden>
+        </div>
+      </div>
+
+      <!-- File Info -->
+      <div id="fileInfo" class="file-info hidden">
+        <div class="file-details">
+          <span class="file-name" id="fileName"></span>
+          <span class="file-size" id="fileSize"></span>
+        </div>
+        <button id="removeFile" class="btn-remove">✕</button>
+      </div>
+
+      <!-- Compression Settings -->
+      <div id="settings" class="settings hidden">
+        <h2>Paramètres</h2>
+        
+        <!-- Preset Selection -->
+        <div class="setting-group">
+          <label>Preset</label>
+          <div class="preset-options">
+            <button class="preset-btn active" data-preset="balanced">
+              <span class="preset-icon">⚖️</span>
+              <span class="preset-name">Équilibré</span>
+              <span class="preset-desc">Compression standard</span>
+            </button>
+            <button class="preset-btn" data-preset="ai">
+              <span class="preset-icon">🤖</span>
+              <span class="preset-name">AI-Optimized</span>
+              <span class="preset-desc">1 FPS, max 400Mo</span>
+            </button>
+            <button class="preset-btn" data-preset="custom">
+              <span class="preset-icon">🔧</span>
+              <span class="preset-name">Custom</span>
+              <span class="preset-desc">Paramètres manuels</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Preset Info -->
+        <div id="aiPresetInfo" class="preset-info hidden">
+          <div class="preset-info-icon">🤖</div>
+          <div class="preset-info-content">
+            <strong>Optimisé pour l'IA</strong>
+            <p>1 image/seconde • Qualité moyenne • Max 400 Mo</p>
+            <p class="preset-info-hint">Parfait pour envoyer à ChatGPT, Claude, Gemini...</p>
+          </div>
+        </div>
+
+        <!-- Custom Options -->
+        <div id="customOptions" class="custom-options hidden">
+          <div class="setting-group">
+            <label>Qualité</label>
+            <div class="quality-options">
+              <button class="quality-btn" data-crf="28" data-label="Légère">
+                <span class="quality-icon">🪶</span>
+                <span class="quality-name">Légère</span>
+                <span class="quality-desc">Fichier plus petit</span>
+              </button>
+              <button class="quality-btn active" data-crf="23" data-label="Équilibrée">
+                <span class="quality-icon">⚖️</span>
+                <span class="quality-name">Équilibrée</span>
+                <span class="quality-desc">Recommandé</span>
+              </button>
+              <button class="quality-btn" data-crf="18" data-label="Haute">
+                <span class="quality-icon">💎</span>
+                <span class="quality-name">Haute</span>
+                <span class="quality-desc">Meilleure qualité</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label for="fpsSelect">Images/seconde (FPS)</label>
+              <select id="fpsSelect">
+                <option value="0">Original</option>
+                <option value="30">30 fps</option>
+                <option value="24">24 fps</option>
+                <option value="15">15 fps</option>
+                <option value="10">10 fps</option>
+                <option value="5">5 fps</option>
+                <option value="2">2 fps</option>
+                <option value="1">1 fps</option>
+              </select>
+            </div>
+
+            <div class="setting-group half">
+              <label for="maxSize">Taille max (Mo)</label>
+              <input type="number" id="maxSize" placeholder="Illimité" min="1">
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label for="scaleSelect">Résolution</label>
+            <select id="scaleSelect">
+              <option value="0">Originale</option>
+              <option value="1920">1080p (1920px)</option>
+              <option value="1280">720p (1280px)</option>
+              <option value="854">480p (854px)</option>
+              <option value="640">360p (640px)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="compressBtn" class="btn-compress">
+          <span class="btn-icon">⚡</span>
+          Compresser
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div id="progress" class="progress hidden">
+        <div class="progress-header">
+          <span class="progress-status" id="progressStatus">Chargement de FFmpeg...</span>
+          <span class="progress-percent" id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-hint">La première compression peut prendre un moment pour charger FFmpeg</p>
+      </div>
+
+      <!-- Result -->
+      <div id="result" class="result hidden">
+        <div class="result-icon">✓</div>
+        <h2>Compression terminée!</h2>
+        <div class="result-stats">
+          <div class="stat">
+            <span class="stat-label">Avant</span>
+            <span class="stat-value" id="originalSize"></span>
+          </div>
+          <div class="stat-arrow">→</div>
+          <div class="stat">
+            <span class="stat-label">Après</span>
+            <span class="stat-value" id="compressedSize"></span>
+          </div>
+          <div class="stat highlight">
+            <span class="stat-label">Réduction</span>
+            <span class="stat-value" id="reduction"></span>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button id="downloadBtn" class="btn-download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Télécharger
+          </button>
+          <button id="newFile" class="btn-new">Nouvelle vidéo</button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Propulsé par <a href="https://ffmpegwasm.netlify.app/" target="_blank">ffmpeg.wasm</a> • Tout se passe dans ton navigateur</p>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
