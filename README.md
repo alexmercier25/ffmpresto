@@ -14,31 +14,40 @@ Parfait pour réduire la taille de vidéos avant de les envoyer à une IA (Gemin
 
 ---
 
-## 🚀 Installation
+## 🚀 Installation (copier-coller une commande)
 
-**Double-clique sur `start.command`** — c'est tout !
+**Ouvre le Terminal** (cherche "Terminal" dans Spotlight avec `Cmd + Espace`)
 
-Le script installe automatiquement tout ce qui manque :
+Puis **copie-colle cette commande** et appuie sur Entrée :
+
+```bash
+cd ~/Downloads/ffmpresto-main && bash install.sh
+```
+
+**C'est tout !** Le script installe automatiquement :
 - ✅ Xcode Command Line Tools
 - ✅ Homebrew
 - ✅ Node.js
 - ✅ FFmpeg
 
-> 💡 La première fois, ça peut prendre 5-10 minutes pour tout installer. Les fois suivantes, ça démarre instantanément.
-
-### Si macOS bloque le fichier
-
-Clic droit sur `start.command` → **"Ouvrir"** (au lieu de double-clic)
+> 💡 La première fois, ça peut prendre 5-10 minutes. Ensuite c'est instantané.
 
 ---
 
-## ▶️ Utilisation
+## ▶️ Utilisation (après installation)
 
-1. **Double-clique sur `start.command`**
-2. L'app s'ouvre dans ton navigateur
-3. Glisse ta vidéo
-4. Choisis un preset
-5. Compresse !
+Pour lancer FFmpresto les prochaines fois :
+
+**Option 1 - Terminal :**
+```bash
+cd ~/Downloads/ffmpresto-main && node server.js
+```
+
+**Option 2 - Fichier :**
+
+Double-clique sur `start.command` (si macOS bloque : clic droit → "Ouvrir")
+
+L'app s'ouvre sur http://localhost:8888
 
 ---
 
@@ -69,13 +78,25 @@ Clic droit sur `start.command` → **"Ouvrir"** (au lieu de double-clic)
 
 ## ❓ Problèmes ?
 
-### "Le fichier ne s'ouvre pas"
+### Où est le Terminal ?
 
-Clic droit → **"Ouvrir"**
+Appuie sur `Cmd + Espace`, tape "Terminal" et appuie sur Entrée
 
-### L'installation bloque
+### La commande ne fonctionne pas
 
-Ferme le Terminal et double-clique à nouveau sur `start.command`
+Vérifie que tu es bien dans le bon dossier :
+```bash
+cd ~/Downloads/ffmpresto-main
+bash install.sh
+```
+
+### "ffmpresto-main" n'existe pas
+
+Tu as peut-être renommé le dossier. Ajuste le chemin :
+```bash
+cd ~/Downloads/TON_DOSSIER
+bash install.sh
+```
 
 ### Le navigateur ne s'ouvre pas
 
