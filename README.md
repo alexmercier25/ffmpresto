@@ -4,6 +4,8 @@
 
 Parfait pour réduire la taille de vidéos avant de les envoyer à une IA (Gemini) ou sur des plateformes avec des limites de taille.
 
+> 🌍 [English version](README.en.md) | L'interface détecte automatiquement la langue de ton navigateur
+
 ---
 
 ## 📥 Téléchargement

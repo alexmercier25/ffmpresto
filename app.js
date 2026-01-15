@@ -204,8 +204,8 @@ async function compressVideo() {
     currentJobId = id;
     
     progressStatus.textContent = currentPreset === 'ai' 
-      ? 'Optimisation IA (FFmpeg natif)...' 
-      : 'Compression (FFmpeg natif)...';
+      ? window.i18n.t('progressAI')
+      : window.i18n.t('progressProcessing');
     progressPercent.textContent = '0%';
     progressFill.style.width = '0%';
     
@@ -216,13 +216,13 @@ async function compressVideo() {
         const data = await progressRes.json();
         
         if (data.status === 'uploading') {
-          progressStatus.textContent = 'Réception par le serveur...';
+          progressStatus.textContent = window.i18n.t('progressUploading');
           progressPercent.textContent = data.uploadProgress + '%';
           progressFill.style.width = data.uploadProgress + '%';
         } else if (data.status === 'processing') {
           progressStatus.textContent = currentPreset === 'ai' 
-            ? 'Optimisation IA (FFmpeg natif)...' 
-            : 'Compression (FFmpeg natif)...';
+            ? window.i18n.t('progressAI')
+            : window.i18n.t('progressProcessing');
           progressPercent.textContent = data.progress + '%';
           progressFill.style.width = data.progress + '%';
         } else if (data.status === 'complete') {

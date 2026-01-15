@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FFmpresto - Compression Vidéo</title>
+  <title id="pageTitle">FFmpresto - Compression Vidéo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
@@ -12,11 +12,17 @@
 <body>
   <div class="app">
     <header>
-      <div class="logo">
-        <span class="logo-icon">⚡</span>
-        <h1>FFmpresto</h1>
+      <div class="header-top">
+        <div class="logo">
+          <span class="logo-icon">⚡</span>
+          <h1>FFmpresto</h1>
+        </div>
+        <div class="language-switcher">
+          <button class="lang-btn active" data-lang="fr">🇫🇷 FR</button>
+          <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+        </div>
       </div>
-      <p class="tagline">Compresse tes vidéos en un éclair</p>
+      <p class="tagline" data-i18n="tagline">Compresse tes vidéos en un éclair</p>
     </header>
 
     <main>
@@ -30,8 +36,8 @@
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
           </div>
-          <p class="drop-text">Glisse ta vidéo ici</p>
-          <p class="drop-subtext">ou clique pour sélectionner</p>
+          <p class="drop-text" data-i18n="dropText">Glisse ta vidéo ici</p>
+          <p class="drop-subtext" data-i18n="dropSubtext">ou clique pour sélectionner</p>
           <input type="file" id="fileInput" accept="video/*" hidden>
         </div>
       </div>
@@ -47,26 +53,26 @@
 
       <!-- Compression Settings -->
       <div id="settings" class="settings hidden">
-        <h2>Paramètres</h2>
+        <h2 data-i18n="settings">Paramètres</h2>
         
         <!-- Preset Selection -->
         <div class="setting-group">
-          <label>Preset</label>
+          <label data-i18n="presetLabel">Preset</label>
           <div class="preset-options">
             <button class="preset-btn active" data-preset="balanced">
               <span class="preset-icon">⚖️</span>
-              <span class="preset-name">Équilibré</span>
-              <span class="preset-desc">Compression standard</span>
+              <span class="preset-name" data-i18n="presetBalanced">Équilibré</span>
+              <span class="preset-desc" data-i18n="presetBalancedDesc">Compression standard</span>
             </button>
             <button class="preset-btn" data-preset="ai">
               <span class="preset-icon">🤖</span>
-              <span class="preset-name">AI-Optimized</span>
-              <span class="preset-desc">1 FPS, max 400Mo</span>
+              <span class="preset-name" data-i18n="presetAI">AI-Optimized</span>
+              <span class="preset-desc" data-i18n="presetAIDesc">1 FPS, max 400Mo</span>
             </button>
             <button class="preset-btn" data-preset="custom">
               <span class="preset-icon">🔧</span>
-              <span class="preset-name">Custom</span>
-              <span class="preset-desc">Paramètres manuels</span>
+              <span class="preset-name" data-i18n="presetCustom">Custom</span>
+              <span class="preset-desc" data-i18n="presetCustomDesc">Paramètres manuels</span>
             </button>
           </div>
         </div>
@@ -75,9 +81,9 @@
         <div id="aiPresetInfo" class="preset-info hidden">
           <div class="preset-info-icon">🤖</div>
           <div class="preset-info-content">
-            <strong>Optimisé pour l'IA</strong>
-            <p>1 image/seconde • Qualité moyenne • Audio optionnel</p>
-            <p class="preset-info-hint">Parfait pour envoyer à Gemini.</p>
+            <strong data-i18n="aiInfoTitle">Optimisé pour l'IA</strong>
+            <p data-i18n="aiInfoDesc">1 image/seconde • Qualité moyenne • Audio optionnel</p>
+            <p class="preset-info-hint" data-i18n="aiInfoHint">Parfait pour envoyer à Gemini.</p>
           </div>
         </div>
 
@@ -87,8 +93,8 @@
             <input type="checkbox" id="includeAudio" checked>
             <span class="checkbox-custom"></span>
             <span class="checkbox-text">
-              <strong>Inclure l'audio</strong>
-              <span class="checkbox-hint">L'IA peut transcrire l'audio pour améliorer son analyse</span>
+              <strong data-i18n="audioLabel">Inclure l'audio</strong>
+              <span class="checkbox-hint" data-i18n="audioDesc">L'IA peut transcrire l'audio pour améliorer son analyse</span>
             </span>
           </label>
         </div>
@@ -96,31 +102,31 @@
         <!-- Custom Options -->
         <div id="customOptions" class="custom-options hidden">
           <div class="setting-group">
-            <label>Qualité</label>
+            <label data-i18n="qualityLabel">Qualité</label>
             <div class="quality-options">
               <button class="quality-btn" data-crf="28" data-label="Légère">
                 <span class="quality-icon">🪶</span>
-                <span class="quality-name">Légère</span>
-                <span class="quality-desc">Fichier plus petit</span>
+                <span class="quality-name" data-i18n="qualityLight">Légère</span>
+                <span class="quality-desc" data-i18n="qualityLightDesc">Fichier plus petit</span>
               </button>
               <button class="quality-btn active" data-crf="23" data-label="Équilibrée">
                 <span class="quality-icon">⚖️</span>
-                <span class="quality-name">Équilibrée</span>
-                <span class="quality-desc">Recommandé</span>
+                <span class="quality-name" data-i18n="qualityBalanced">Équilibrée</span>
+                <span class="quality-desc" data-i18n="qualityBalancedDesc">Recommandé</span>
               </button>
               <button class="quality-btn" data-crf="18" data-label="Haute">
                 <span class="quality-icon">💎</span>
-                <span class="quality-name">Haute</span>
-                <span class="quality-desc">Meilleure qualité</span>
+                <span class="quality-name" data-i18n="qualityHigh">Haute</span>
+                <span class="quality-desc" data-i18n="qualityHighDesc">Meilleure qualité</span>
               </button>
             </div>
           </div>
 
           <div class="setting-row">
             <div class="setting-group half">
-              <label for="fpsSelect">Images/seconde (FPS)</label>
+              <label for="fpsSelect" data-i18n="fpsLabel">Images/seconde (FPS)</label>
               <select id="fpsSelect">
-                <option value="0">Original</option>
+                <option value="0" data-i18n="original">Original</option>
                 <option value="30">30 fps</option>
                 <option value="24">24 fps</option>
                 <option value="15">15 fps</option>
@@ -132,15 +138,15 @@
             </div>
 
             <div class="setting-group half">
-              <label for="maxSize">Taille max (Mo)</label>
-              <input type="number" id="maxSize" placeholder="Illimité" min="1">
+              <label for="maxSize" data-i18n="maxSizeLabel">Taille max (Mo)</label>
+              <input type="number" id="maxSize" data-i18n-placeholder="maxSizePlaceholder" placeholder="Illimité" min="1">
             </div>
           </div>
 
           <div class="setting-group">
-            <label for="scaleSelect">Résolution</label>
+            <label for="scaleSelect" data-i18n="resolutionLabel">Résolution</label>
             <select id="scaleSelect">
-              <option value="0">Originale</option>
+              <option value="0" data-i18n="originalRes">Originale</option>
               <option value="1920">1080p (1920px)</option>
               <option value="1280">720p (1280px)</option>
               <option value="854">480p (854px)</option>
@@ -151,38 +157,38 @@
 
         <button id="compressBtn" class="btn-compress">
           <span class="btn-icon">⚡</span>
-          Compresser
+          <span data-i18n="compressBtn">Compresser</span>
         </button>
       </div>
 
       <!-- Progress -->
       <div id="progress" class="progress hidden">
         <div class="progress-header">
-          <span class="progress-status" id="progressStatus">Chargement de FFmpeg...</span>
+          <span class="progress-status" id="progressStatus" data-i18n="progressLoading">Chargement de FFmpeg...</span>
           <span class="progress-percent" id="progressPercent">0%</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" id="progressFill"></div>
         </div>
-        <p class="progress-hint">La première compression peut prendre un moment pour charger FFmpeg</p>
+        <p class="progress-hint" data-i18n="progressHint">La première compression peut prendre un moment pour charger FFmpeg</p>
       </div>
 
       <!-- Result -->
       <div id="result" class="result hidden">
         <div class="result-icon">✓</div>
-        <h2>Compression terminée!</h2>
+        <h2 data-i18n="resultTitle">Compression terminée!</h2>
         <div class="result-stats">
           <div class="stat">
-            <span class="stat-label">Avant</span>
+            <span class="stat-label" data-i18n="resultBefore">Avant</span>
             <span class="stat-value" id="originalSize"></span>
           </div>
           <div class="stat-arrow">→</div>
           <div class="stat">
-            <span class="stat-label">Après</span>
+            <span class="stat-label" data-i18n="resultAfter">Après</span>
             <span class="stat-value" id="compressedSize"></span>
           </div>
           <div class="stat highlight">
-            <span class="stat-label">Réduction</span>
+            <span class="stat-label" data-i18n="resultReduction">Réduction</span>
             <span class="stat-value" id="reduction"></span>
           </div>
         </div>
@@ -193,19 +199,20 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Télécharger
+            <span data-i18n="downloadBtn">Télécharger</span>
           </button>
-          <button id="newFile" class="btn-new">Nouvelle vidéo</button>
+          <button id="newFile" class="btn-new" data-i18n="newFileBtn">Nouvelle vidéo</button>
         </div>
       </div>
     </main>
 
     <footer>
-      <p>Propulsé par <a href="https://www.ffmpeg.org/" target="_blank">ffmpeg</a> • Tout se passe dans ton ordinateur</p>
-      <p class="footer-credit">Créé par <a href="https://www.linkedin.com/in/alexandre-mercier-3080ba197/" target="_blank">Alexandre Mercier</a></p>
+      <p><span data-i18n="footerText">Propulsé par</span> <a href="https://www.ffmpeg.org/" target="_blank">ffmpeg</a> • <span data-i18n="footerLocal">Tout se passe dans ton ordinateur</span></p>
+      <p class="footer-credit"><span data-i18n="footerCredit">Créé par</span> <a href="https://www.linkedin.com/in/alexandre-mercier-3080ba197/" target="_blank">Alexandre Mercier</a></p>
     </footer>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
