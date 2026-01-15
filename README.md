@@ -2,154 +2,89 @@
 
 **Compresse tes vidéos ultra rapidement, directement sur ton Mac.**
 
-Parfait pour réduire la taille de vidéos avant de les envoyer à une IA (ChatGPT, Claude, Gemini) ou sur des plateformes avec des limites de taille.
-
-![FFmpresto](https://img.shields.io/badge/100%25-Local-22c55e?style=flat-square)
-![macOS](https://img.shields.io/badge/macOS-Compatible-blue?style=flat-square)
+Parfait pour réduire la taille de vidéos avant de les envoyer à une IA (Gemini) ou sur des plateformes avec des limites de taille.
 
 ---
 
-## 🚀 Installation (5 minutes)
+## 📥 Téléchargement
 
-### Étape 1 : Installer Homebrew (si pas déjà fait)
+1. **Télécharge le repo** : Clique sur le bouton vert "Code" → **"Download ZIP"**
+2. **Décompresse le fichier** : Double-clique sur `ffmpresto-main.zip` dans ton dossier Téléchargements
+3. **Ouvre le dossier** : Tu devrais voir un dossier `ffmpresto-main` avec tous les fichiers
 
-Ouvre l'app **Terminal** (cherche "Terminal" dans Spotlight avec `Cmd + Espace`) et colle cette commande :
+---
 
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+## 🚀 Installation
 
-Suis les instructions à l'écran. Ça peut prendre quelques minutes.
+**Double-clique sur `start.command`** — c'est tout !
 
-### Étape 2 : Installer les dépendances
+Le script installe automatiquement tout ce qui manque :
+- ✅ Xcode Command Line Tools
+- ✅ Homebrew
+- ✅ Node.js
+- ✅ FFmpeg
 
-Toujours dans le Terminal, tape ces deux commandes :
+> 💡 La première fois, ça peut prendre 5-10 minutes pour tout installer. Les fois suivantes, ça démarre instantanément.
 
-```bash
-brew install node
-```
+### Si macOS bloque le fichier
 
-```bash
-brew install ffmpeg
-```
-
-C'est tout ! ✅
+Clic droit sur `start.command` → **"Ouvrir"** (au lieu de double-clic)
 
 ---
 
 ## ▶️ Utilisation
 
-### Option 1 : Double-clic (recommandé)
-
 1. **Double-clique sur `start.command`**
-2. L'app s'ouvre automatiquement dans ton navigateur
-3. Glisse ta vidéo et compresse !
-
-> 💡 Si macOS dit que le fichier n'est pas autorisé :
-> - Clic droit sur `start.command` → "Ouvrir"
-> - Ou va dans Préférences Système → Sécurité → "Ouvrir quand même"
-
-### Option 2 : Terminal
-
-```bash
-cd ~/ffmpresto
-node server.js
-```
-
-Puis ouvre http://localhost:8888
+2. L'app s'ouvre dans ton navigateur
+3. Glisse ta vidéo
+4. Choisis un preset
+5. Compresse !
 
 ---
 
-## ✨ Fonctionnalités
-
-### Presets
+## ✨ Presets
 
 | Preset | Description | Idéal pour |
 |--------|-------------|------------|
 | ⚖️ **Équilibré** | Compression standard | Usage général |
-| 🤖 **AI-Optimized** | 1 FPS, résolution réduite | Envoyer à ChatGPT/Claude/Gemini |
+| 🤖 **AI-Optimized** | 1 FPS, résolution réduite | Envoyer à Gemini |
 | 🔧 **Custom** | Paramètres manuels | Besoins spécifiques |
 
-### Options Custom
+### Preset AI-Optimized
 
-- **Qualité** : Légère / Équilibrée / Haute
-- **FPS** : 1 à 30 (ou original)
-- **Résolution** : 360p à 1080p (ou originale)
-- **Audio** : Inclure ou non (utile si l'IA transcrit)
-
----
-
-## 🤖 Preset AI-Optimized
-
-Ce preset est conçu pour envoyer des vidéos aux IA :
-
-- **1 FPS** : Les IA n'ont pas besoin de 30/60 fps pour comprendre le contexte
+- **1 FPS** : Les IA n'ont pas besoin de 30/60 fps
 - **720p** : Résolution suffisante pour l'analyse
-- **Audio optionnel** : Garde-le si l'IA peut transcrire (recommandé)
+- **Audio** : Garde-le pour la transcription
 
-Résultat : Une vidéo de **1 Go peut devenir 20-50 Mo** !
-
----
-
-## 📁 Structure
-
-```
-ffmpresto/
-├── start.command   ← Double-clique ici pour lancer
-├── server.js       ← Serveur (utilise FFmpeg natif)
-├── index.html      ← Interface
-├── style.css       ← Styles
-├── app.js          ← Logique
-└── README.md       ← Ce fichier
-```
-
----
-
-## ❓ FAQ
-
-### "FFmpeg n'est pas installé"
-
-```bash
-brew install ffmpeg
-```
-
-### "Node.js n'est pas installé"
-
-```bash
-brew install node
-```
-
-### "brew: command not found"
-
-Installe Homebrew d'abord (voir Étape 1).
-
-### "Le fichier start.command ne s'ouvre pas"
-
-Clic droit → "Ouvrir" (au lieu de double-clic).
-
-### La compression est lente
-
-- Vérifie que tu utilises bien le serveur natif (pas ffmpeg.wasm)
-- Les très grosses vidéos (>2 Go) prennent naturellement plus de temps
-- Le preset AI-Optimized est plus rapide car il réduit beaucoup la vidéo
+📉 Une vidéo de **1 Go peut devenir 20-50 Mo** !
 
 ---
 
 ## 🔒 Confidentialité
 
 - **100% local** : Aucune donnée n'est envoyée sur internet
-- Les fichiers temporaires sont dans `/tmp/ffmpresto/` et supprimés après usage
+- Tout reste sur ton Mac
 
 ---
 
-## 🛠️ Pour les devs
+## ❓ Problèmes ?
 
-Le serveur expose ces endpoints :
+### "Le fichier ne s'ouvre pas"
 
-- `POST /api/compress` - Upload et compression (streaming)
-- `GET /api/progress/:id` - Status de la compression
-- `GET /api/download/:id` - Télécharger le résultat
+Clic droit → **"Ouvrir"**
+
+### L'installation bloque
+
+Ferme le Terminal et double-clique à nouveau sur `start.command`
+
+### Le navigateur ne s'ouvre pas
+
+Va manuellement sur http://localhost:8888
 
 ---
 
-Made with ⚡ pour compresser des vidéos sans prise de tête
+## 👤 Crédits
+
+Créé par [Alexandre Mercier](https://www.linkedin.com/in/alexandre-mercier-3080ba197/)
+
+Made with ⚡
