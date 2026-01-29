@@ -17,10 +17,10 @@ const PRESETS = {
     preset: 'medium'
   },
   ai: {
-    crf: 28,
-    fps: 1,
+    crf: 26,
+    fps: 24,
     scale: 1280,
-    preset: 'fast'
+    preset: 'faster'
   },
   custom: null
 };
@@ -332,5 +332,361 @@ newFileBtn.addEventListener('click', resetToDropZone);
 
 // Initialize
 setPreset('balanced');
+
+// ============ NAVIGATION ============
+const sidebar = document.querySelector('.sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const menuToggle = document.getElementById('menuToggle');
+const navItems = document.querySelectorAll('.nav-item');
+const pages = document.querySelectorAll('.page');
+
+// Toggle mobile sidebar
+function toggleSidebar() {
+  sidebar.classList.toggle('open');
+  sidebarOverlay.classList.toggle('active');
+}
+
+// Close sidebar
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('active');
+}
+
+// Navigate to page
+function navigateTo(pageName) {
+  // Update nav items
+  navItems.forEach(item => {
+    item.classList.toggle('active', item.dataset.page === pageName);
+  });
+
+  // Update pages
+  pages.forEach(page => {
+    page.classList.toggle('active', page.id === `page-${pageName}`);
+  });
+
+  // Close mobile sidebar
+  closeSidebar();
+
+  // Special handling for settings page
+  if (pageName === 'settings') {
+    updateSettingsPage();
+  }
+}
+
+// Update settings page API key status
+async function updateSettingsPage() {
+  const hasKey = await checkApiKey();
+  const statusEl = document.getElementById('settingsApiKeyStatus');
+  const statusText = statusEl.querySelector('.status-text');
+  const deleteBtn = document.getElementById('settingsDeleteApiKeyBtn');
+  const inputGroup = statusEl.nextElementSibling;
+
+  if (hasKey) {
+    statusEl.classList.add('configured');
+    statusText.textContent = window.i18n.t('settingsApiConfigured');
+    deleteBtn.classList.remove('hidden');
+    inputGroup.classList.add('hidden');
+  } else {
+    statusEl.classList.remove('configured');
+    statusText.textContent = window.i18n.t('settingsApiNotConfigured');
+    deleteBtn.classList.add('hidden');
+    inputGroup.classList.remove('hidden');
+  }
+}
+
+// Event listeners for navigation
+menuToggle.addEventListener('click', toggleSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+navItems.forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo(item.dataset.page);
+  });
+});
+
+// Settings page API key handlers
+const settingsApiKeyInput = document.getElementById('settingsApiKeyInput');
+const settingsSaveApiKeyBtn = document.getElementById('settingsSaveApiKeyBtn');
+const settingsDeleteApiKeyBtn = document.getElementById('settingsDeleteApiKeyBtn');
+
+settingsSaveApiKeyBtn.addEventListener('click', async () => {
+  const key = settingsApiKeyInput.value.trim();
+  if (key) {
+    const saved = await saveApiKey(key);
+    if (saved) {
+      settingsApiKeyInput.value = '';
+      await updateSettingsPage();
+    }
+  }
+});
+
+settingsApiKeyInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    settingsSaveApiKeyBtn.click();
+  }
+});
+
+settingsDeleteApiKeyBtn.addEventListener('click', async () => {
+  if (confirm(window.i18n.t('geminiDeleteConfirm'))) {
+    await deleteApiKey();
+    await updateSettingsPage();
+  }
+});
+
+// ============ GEMINI INTEGRATION ============
+
+// Gemini DOM Elements
+const geminiSection = document.getElementById('geminiSection');
+const geminiSetup = document.getElementById('geminiSetup');
+const geminiActions = document.getElementById('geminiActions');
+const geminiStatus = document.getElementById('geminiStatus');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+const geminiConfigBtn = document.getElementById('geminiConfigBtn');
+const uploadToGeminiBtn = document.getElementById('uploadToGeminiBtn');
+const magicButtons = document.getElementById('magicButtons');
+const magicBtns = document.querySelectorAll('.magic-btn');
+const customPromptInput = document.getElementById('customPromptInput');
+const sendCustomPromptBtn = document.getElementById('sendCustomPromptBtn');
+const geminiResponse = document.getElementById('geminiResponse');
+const geminiResponseContent = document.getElementById('geminiResponseContent');
+const copyResponseBtn = document.getElementById('copyResponseBtn');
+
+// Gemini state
+let geminiFileUploaded = false;
+
+// Check API key on load and show Gemini section if AI preset was used
+async function checkApiKey() {
+  try {
+    const res = await fetch('/api/gemini/key');
+    const data = await res.json();
+    return data.hasKey;
+  } catch (e) {
+    console.error('Error checking API key:', e);
+    return false;
+  }
+}
+
+// Save API key
+async function saveApiKey(key) {
+  try {
+    const res = await fetch('/api/gemini/key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: key })
+    });
+    const data = await res.json();
+    return data.success;
+  } catch (e) {
+    console.error('Error saving API key:', e);
+    return false;
+  }
+}
+
+// Delete API key
+async function deleteApiKey() {
+  try {
+    await fetch('/api/gemini/key', { method: 'DELETE' });
+  } catch (e) {
+    console.error('Error deleting API key:', e);
+  }
+}
+
+// Update Gemini UI based on key status
+async function updateGeminiUI() {
+  const hasKey = await checkApiKey();
+
+  if (hasKey) {
+    geminiSetup.classList.add('hidden');
+    geminiActions.classList.remove('hidden');
+  } else {
+    geminiSetup.classList.remove('hidden');
+    geminiActions.classList.add('hidden');
+  }
+}
+
+// Set Gemini status message
+function setGeminiStatus(text, state = 'ready') {
+  const statusDot = geminiStatus.querySelector('.status-dot');
+  const statusText = geminiStatus.querySelector('.status-text');
+
+  statusDot.classList.remove('loading', 'error');
+  if (state === 'loading') statusDot.classList.add('loading');
+  if (state === 'error') statusDot.classList.add('error');
+
+  statusText.textContent = text;
+}
+
+// Upload video to Gemini
+async function uploadToGemini() {
+  if (!currentJobId) return;
+
+  uploadToGeminiBtn.disabled = true;
+  uploadToGeminiBtn.innerHTML = '<span class="loading-spinner"></span><span>' + window.i18n.t('geminiUploading') + '</span>';
+  setGeminiStatus(window.i18n.t('geminiUploading'), 'loading');
+
+  try {
+    const res = await fetch('/api/gemini/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: currentJobId })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      geminiFileUploaded = true;
+      uploadToGeminiBtn.classList.add('hidden');
+      magicButtons.classList.remove('hidden');
+      setGeminiStatus(window.i18n.t('geminiReadyAnalyze'), 'ready');
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (e) {
+    console.error('Upload to Gemini failed:', e);
+    setGeminiStatus(window.i18n.t('geminiError') + ': ' + e.message, 'error');
+    uploadToGeminiBtn.disabled = false;
+    uploadToGeminiBtn.innerHTML = '<span class="btn-icon">☁️</span><span>' + window.i18n.t('geminiUpload') + '</span>';
+  }
+}
+
+// Send prompt to Gemini
+async function sendPrompt(promptType, customPrompt = null) {
+  if (!currentJobId || !geminiFileUploaded) return;
+
+  // Disable all buttons
+  magicBtns.forEach(btn => btn.disabled = true);
+  sendCustomPromptBtn.disabled = true;
+  setGeminiStatus(window.i18n.t('geminiAnalyzing'), 'loading');
+
+  try {
+    const res = await fetch('/api/gemini/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobId: currentJobId,
+        promptType: promptType,
+        prompt: customPrompt
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      geminiResponseContent.textContent = data.response;
+      geminiResponse.classList.remove('hidden');
+      setGeminiStatus(window.i18n.t('geminiComplete'), 'ready');
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (e) {
+    console.error('Gemini prompt failed:', e);
+    setGeminiStatus(window.i18n.t('geminiError') + ': ' + e.message, 'error');
+  } finally {
+    // Re-enable buttons
+    magicBtns.forEach(btn => btn.disabled = false);
+    sendCustomPromptBtn.disabled = false;
+  }
+}
+
+// Copy response to clipboard
+function copyResponse() {
+  const text = geminiResponseContent.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const originalTitle = copyResponseBtn.title;
+    copyResponseBtn.title = window.i18n.t('geminiCopied');
+    setTimeout(() => {
+      copyResponseBtn.title = originalTitle;
+    }, 2000);
+  });
+}
+
+// Event Listeners for Gemini
+saveApiKeyBtn.addEventListener('click', async () => {
+  const key = apiKeyInput.value.trim();
+  if (key) {
+    const saved = await saveApiKey(key);
+    if (saved) {
+      apiKeyInput.value = '';
+      await updateGeminiUI();
+    }
+  }
+});
+
+apiKeyInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    saveApiKeyBtn.click();
+  }
+});
+
+geminiConfigBtn.addEventListener('click', async () => {
+  // Toggle between showing setup and actions
+  const hasKey = await checkApiKey();
+  if (hasKey) {
+    if (confirm(window.i18n.t('geminiDeleteConfirm'))) {
+      await deleteApiKey();
+      await updateGeminiUI();
+      magicButtons.classList.add('hidden');
+      uploadToGeminiBtn.classList.remove('hidden');
+      uploadToGeminiBtn.disabled = false;
+      uploadToGeminiBtn.innerHTML = '<span class="btn-icon">☁️</span><span>' + window.i18n.t('geminiUpload') + '</span>';
+      geminiFileUploaded = false;
+    }
+  }
+});
+
+uploadToGeminiBtn.addEventListener('click', uploadToGemini);
+
+magicBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    sendPrompt(btn.dataset.prompt);
+  });
+});
+
+sendCustomPromptBtn.addEventListener('click', () => {
+  const prompt = customPromptInput.value.trim();
+  if (prompt) {
+    sendPrompt('custom', prompt);
+    customPromptInput.value = '';
+  }
+});
+
+customPromptInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendCustomPromptBtn.click();
+  }
+});
+
+copyResponseBtn.addEventListener('click', copyResponse);
+
+// Modify showResults to show Gemini section for AI preset
+const originalShowResults = showResults;
+showResults = function(inputSize, outputSize) {
+  originalShowResults(inputSize, outputSize);
+
+  // Show Gemini section only for AI preset
+  if (currentPreset === 'ai') {
+    geminiSection.classList.remove('hidden');
+    geminiFileUploaded = false;
+    uploadToGeminiBtn.classList.remove('hidden');
+    uploadToGeminiBtn.disabled = false;
+    uploadToGeminiBtn.innerHTML = '<span class="btn-icon">☁️</span><span>' + window.i18n.t('geminiUpload') + '</span>';
+    magicButtons.classList.add('hidden');
+    geminiResponse.classList.add('hidden');
+    updateGeminiUI();
+    setGeminiStatus(window.i18n.t('geminiReady'), 'ready');
+  } else {
+    geminiSection.classList.add('hidden');
+  }
+};
+
+// Modify resetToDropZone to reset Gemini state
+const originalResetToDropZone = resetToDropZone;
+resetToDropZone = function() {
+  originalResetToDropZone();
+  geminiSection.classList.add('hidden');
+  geminiFileUploaded = false;
+};
 
 console.log('⚡ FFmpresto loaded (Native FFmpeg mode)');

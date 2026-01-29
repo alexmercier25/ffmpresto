@@ -10,22 +10,75 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="header-top">
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
         <div class="logo">
           <span class="logo-icon">⚡</span>
-          <h1>FFmpresto</h1>
-        </div>
-        <div class="language-switcher">
-          <button class="lang-btn active" data-lang="fr">🇫🇷 FR</button>
-          <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+          <span class="logo-text">FFmpresto</span>
         </div>
       </div>
-      <p class="tagline" data-i18n="tagline">Compresse tes vidéos en un éclair</p>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="compress">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <span data-i18n="navCompress">Compresser</span>
+        </a>
+        <a href="#" class="nav-item" data-page="history">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span data-i18n="navHistory">Historique</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span data-i18n="navSettings">Paramètres</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="language-switcher">
+          <button class="lang-btn active" data-lang="fr">FR</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <div class="sidebar-credit">
+          <a href="https://www.linkedin.com/in/alexandre-mercier-3080ba197/" target="_blank">Créé par Alex Mercier</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <button class="menu-toggle" id="menuToggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">FFmpresto</span>
+      </div>
     </header>
 
-    <main>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Page: Compress -->
+      <div class="page active" id="page-compress">
+        <div class="page-header">
+          <h1 data-i18n="compressTitle">Compression Vidéo</h1>
+          <p class="page-subtitle" data-i18n="tagline">Compresse tes vidéos en un éclair</p>
+        </div>
+
+        <div class="page-content">
       <!-- Drop Zone -->
       <div id="dropZone" class="drop-zone">
         <div class="drop-content">
@@ -67,7 +120,7 @@
             <button class="preset-btn" data-preset="ai">
               <span class="preset-icon">🤖</span>
               <span class="preset-name" data-i18n="presetAI">AI-Optimized</span>
-              <span class="preset-desc" data-i18n="presetAIDesc">1 FPS, max 400Mo</span>
+              <span class="preset-desc" data-i18n="presetAIDesc">24 FPS, 720p, max 2Go</span>
             </button>
             <button class="preset-btn" data-preset="custom">
               <span class="preset-icon">🔧</span>
@@ -82,7 +135,7 @@
           <div class="preset-info-icon">🤖</div>
           <div class="preset-info-content">
             <strong data-i18n="aiInfoTitle">Optimisé pour l'IA</strong>
-            <p data-i18n="aiInfoDesc">1 image/seconde • Qualité moyenne • Audio optionnel</p>
+            <p data-i18n="aiInfoDesc">24 images/seconde • 720p • Audio 128k</p>
             <p class="preset-info-hint" data-i18n="aiInfoHint">Parfait pour envoyer à Gemini.</p>
           </div>
         </div>
@@ -203,13 +256,174 @@
           </button>
           <button id="newFile" class="btn-new" data-i18n="newFileBtn">Nouvelle vidéo</button>
         </div>
+
+        <!-- Gemini Integration Section (only for AI preset) -->
+        <div id="geminiSection" class="gemini-section hidden">
+          <div class="gemini-header">
+            <div class="gemini-logo">
+              <span class="gemini-icon">✨</span>
+              <h3 data-i18n="geminiTitle">Analyser avec Gemini</h3>
+            </div>
+            <button id="geminiConfigBtn" class="btn-config" title="Configurer API">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- API Key Setup (shown when no key) -->
+          <div id="geminiSetup" class="gemini-setup">
+            <p class="gemini-setup-text" data-i18n="geminiSetupText">Configure ta clé API Gemini pour analyser la vidéo directement.</p>
+            <div class="api-key-input-group">
+              <input type="password" id="apiKeyInput" placeholder="AIza..." class="api-key-input">
+              <button id="saveApiKeyBtn" class="btn-save-key" data-i18n="geminiSaveKey">Sauvegarder</button>
+            </div>
+            <p class="api-key-hint">
+              <a href="https://aistudio.google.com/apikey" target="_blank" data-i18n="geminiGetKey">Obtenir une clé API gratuite</a>
+            </p>
+          </div>
+
+          <!-- Gemini Actions (shown when key is set) -->
+          <div id="geminiActions" class="gemini-actions hidden">
+            <div class="gemini-status" id="geminiStatus">
+              <span class="status-dot"></span>
+              <span class="status-text" data-i18n="geminiReady">Prêt à analyser</span>
+            </div>
+
+            <!-- Upload to Gemini Button -->
+            <button id="uploadToGeminiBtn" class="btn-upload-gemini">
+              <span class="btn-icon">☁️</span>
+              <span data-i18n="geminiUpload">Envoyer à Gemini</span>
+            </button>
+
+            <!-- Magic Buttons (shown after upload) -->
+            <div id="magicButtons" class="magic-buttons hidden">
+              <p class="magic-buttons-label" data-i18n="geminiMagicLabel">Actions rapides</p>
+              <div class="magic-buttons-grid">
+                <button class="magic-btn" data-prompt="chapters">
+                  <span class="magic-icon">📑</span>
+                  <span class="magic-name" data-i18n="geminiChapters">Chapitres</span>
+                </button>
+                <button class="magic-btn" data-prompt="summary">
+                  <span class="magic-icon">📝</span>
+                  <span class="magic-name" data-i18n="geminiSummary">Résumé TL;DR</span>
+                </button>
+                <button class="magic-btn" data-prompt="quiz">
+                  <span class="magic-icon">❓</span>
+                  <span class="magic-name" data-i18n="geminiQuiz">QCM</span>
+                </button>
+                <button class="magic-btn" data-prompt="sentiment">
+                  <span class="magic-icon">💭</span>
+                  <span class="magic-name" data-i18n="geminiSentiment">Sentiment</span>
+                </button>
+              </div>
+
+              <!-- Custom prompt -->
+              <div class="custom-prompt-group">
+                <input type="text" id="customPromptInput" class="custom-prompt-input" data-i18n-placeholder="geminiCustomPlaceholder" placeholder="Pose ta question...">
+                <button id="sendCustomPromptBtn" class="btn-send-prompt">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Gemini Response -->
+            <div id="geminiResponse" class="gemini-response hidden">
+              <div class="response-header">
+                <span class="response-label" data-i18n="geminiResponseLabel">Réponse Gemini</span>
+                <button id="copyResponseBtn" class="btn-copy" title="Copier">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+              <div id="geminiResponseContent" class="response-content"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+        </div>
+      </div>
+
+      <!-- Page: History -->
+      <div class="page" id="page-history">
+        <div class="page-header">
+          <h1 data-i18n="historyTitle">Historique</h1>
+          <p class="page-subtitle" data-i18n="historySubtitle">Tes compressions récentes</p>
+        </div>
+        <div class="page-content">
+          <div class="empty-state">
+            <div class="empty-icon">📁</div>
+            <p data-i18n="historyEmpty">Aucune compression pour le moment</p>
+            <p class="empty-hint" data-i18n="historyEmptyHint">Tes fichiers compressés apparaîtront ici</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Settings -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <h1 data-i18n="settingsTitle">Paramètres</h1>
+          <p class="page-subtitle" data-i18n="settingsSubtitle">Configuration de l'application</p>
+        </div>
+        <div class="page-content">
+          <!-- Gemini API Settings -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-icon">✨</div>
+              <div class="settings-card-info">
+                <h3 data-i18n="settingsGeminiTitle">API Gemini</h3>
+                <p data-i18n="settingsGeminiDesc">Connecte ton compte pour l'analyse vidéo IA</p>
+              </div>
+            </div>
+            <div class="settings-card-content">
+              <div id="settingsApiKeyStatus" class="api-key-status">
+                <span class="status-indicator"></span>
+                <span class="status-text" data-i18n="settingsApiNotConfigured">Non configurée</span>
+              </div>
+              <div class="api-key-input-group">
+                <input type="password" id="settingsApiKeyInput" placeholder="AIza..." class="api-key-input">
+                <button id="settingsSaveApiKeyBtn" class="btn-save-key" data-i18n="geminiSaveKey">Sauvegarder</button>
+              </div>
+              <div class="settings-actions">
+                <a href="https://aistudio.google.com/apikey" target="_blank" class="settings-link" data-i18n="geminiGetKey">Obtenir une clé API gratuite</a>
+                <button id="settingsDeleteApiKeyBtn" class="btn-delete-key hidden" data-i18n="settingsDeleteKey">Supprimer la clé</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- About -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-icon">⚡</div>
+              <div class="settings-card-info">
+                <h3 data-i18n="settingsAboutTitle">À propos</h3>
+                <p>FFmpresto v1.0</p>
+              </div>
+            </div>
+            <div class="settings-card-content">
+              <p class="about-text">
+                <span data-i18n="footerText">Propulsé par</span> <a href="https://www.ffmpeg.org/" target="_blank">FFmpeg</a>
+              </p>
+              <p class="about-text">
+                <span data-i18n="footerLocal">Tout se passe dans ton ordinateur</span>
+              </p>
+              <p class="about-credit">
+                <span data-i18n="footerCredit">Créé par</span> <a href="https://www.linkedin.com/in/alexandre-mercier-3080ba197/" target="_blank">Alexandre Mercier</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
-    <footer>
-      <p><span data-i18n="footerText">Propulsé par</span> <a href="https://www.ffmpeg.org/" target="_blank">ffmpeg</a> • <span data-i18n="footerLocal">Tout se passe dans ton ordinateur</span></p>
-      <p class="footer-credit"><span data-i18n="footerCredit">Créé par</span> <a href="https://www.linkedin.com/in/alexandre-mercier-3080ba197/" target="_blank">Alexandre Mercier</a></p>
-    </footer>
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
   </div>
 
   <script src="i18n.js"></script>

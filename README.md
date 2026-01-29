@@ -58,12 +58,12 @@ L'app s'ouvre sur http://localhost:8888
 | Preset | Description | Idéal pour |
 |--------|-------------|------------|
 | ⚖️ **Équilibré** | Compression standard | Usage général |
-| 🤖 **AI-Optimized** | 1 FPS, résolution réduite | Envoyer à Gemini |
+| 🤖 **AI-Optimized** | 24 FPS, 720p, optimisé | Envoyer à Gemini |
 | 🔧 **Custom** | Paramètres manuels | Besoins spécifiques |
 
 ### Preset AI-Optimized
 
-- **1 FPS** : Les IA n'ont pas besoin de 30/60 fps
+- **24 FPS** : Mouvement fluide pour l'analyse
 - **720p** : Résolution suffisante pour l'analyse
 - **Audio** : Garde-le pour la transcription
 

@@ -4,9 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const os = require('os');
+const https = require('https');
 
 const PORT = 8888;
 const TEMP_DIR = path.join(os.tmpdir(), 'ffmpresto');
+const CONFIG_DIR = path.join(os.homedir(), '.ffmpresto');
+const API_KEY_FILE = path.join(CONFIG_DIR, 'gemini_api_key');
+
+// Ensure config directory exists
+if (!fs.existsSync(CONFIG_DIR)) {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+}
 
 // Check FFmpeg at startup
 function checkFFmpeg() {
@@ -96,6 +104,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API: Gemini API Key management
+  if (req.url === '/api/gemini/key') {
+    handleApiKey(req, res);
+    return;
+  }
+
+  // API: Upload to Gemini
+  if (req.method === 'POST' && req.url === '/api/gemini/upload') {
+    handleGeminiUpload(req, res);
+    return;
+  }
+
+  // API: Send prompt to Gemini
+  if (req.method === 'POST' && req.url === '/api/gemini/prompt') {
+    handleGeminiPrompt(req, res);
+    return;
+  }
+
   // Static files
   let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
   filePath = path.join(__dirname, filePath);
@@ -120,7 +146,7 @@ const server = http.createServer((req, res) => {
 });
 
 function handleCompressStream(req, res) {
-  const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
   
   // Get settings from headers
   const fileName = req.headers['x-filename'] || 'video.mp4';
@@ -383,6 +409,346 @@ server.listen(PORT, () => {
   Utilise FFmpeg natif pour une compression ultra-rapide!
   `);
 });
+
+// ============ GEMINI API FUNCTIONS ============
+
+// Save API Key
+function saveApiKey(apiKey) {
+  fs.writeFileSync(API_KEY_FILE, apiKey, 'utf8');
+}
+
+// Get API Key
+function getApiKey() {
+  if (fs.existsSync(API_KEY_FILE)) {
+    return fs.readFileSync(API_KEY_FILE, 'utf8').trim();
+  }
+  return null;
+}
+
+// Handle API Key endpoints
+function handleApiKey(req, res) {
+  if (req.method === 'GET') {
+    const apiKey = getApiKey();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ hasKey: !!apiKey, keyPreview: apiKey ? apiKey.slice(0, 8) + '...' : null }));
+  } else if (req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { apiKey } = JSON.parse(body);
+        if (apiKey) {
+          saveApiKey(apiKey);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'API key required' }));
+        }
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+  } else if (req.method === 'DELETE') {
+    if (fs.existsSync(API_KEY_FILE)) {
+      fs.unlinkSync(API_KEY_FILE);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+  }
+}
+
+// Upload file to Gemini Files API
+async function uploadToGemini(filePath, mimeType) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('No API key configured');
+
+  const fileSize = fs.statSync(filePath).size;
+  const fileName = path.basename(filePath);
+
+  return new Promise((resolve, reject) => {
+    // Step 1: Start resumable upload
+    const startOptions = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/upload/v1beta/files?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'X-Goog-Upload-Protocol': 'resumable',
+        'X-Goog-Upload-Command': 'start',
+        'X-Goog-Upload-Header-Content-Length': fileSize,
+        'X-Goog-Upload-Header-Content-Type': mimeType,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const startReq = https.request(startOptions, (startRes) => {
+      const uploadUrl = startRes.headers['x-goog-upload-url'];
+
+      if (!uploadUrl) {
+        let errorBody = '';
+        startRes.on('data', chunk => errorBody += chunk);
+        startRes.on('end', () => {
+          reject(new Error(`Failed to get upload URL: ${errorBody}`));
+        });
+        return;
+      }
+
+      // Step 2: Upload the file
+      const fileData = fs.readFileSync(filePath);
+      const uploadUrlObj = new URL(uploadUrl);
+
+      const uploadOptions = {
+        hostname: uploadUrlObj.hostname,
+        path: uploadUrlObj.pathname + uploadUrlObj.search,
+        method: 'POST',
+        headers: {
+          'Content-Length': fileSize,
+          'X-Goog-Upload-Offset': '0',
+          'X-Goog-Upload-Command': 'upload, finalize'
+        }
+      };
+
+      const uploadReq = https.request(uploadOptions, (uploadRes) => {
+        let body = '';
+        uploadRes.on('data', chunk => body += chunk);
+        uploadRes.on('end', () => {
+          try {
+            const result = JSON.parse(body);
+            if (result.file) {
+              resolve(result.file);
+            } else {
+              reject(new Error(`Upload failed: ${body}`));
+            }
+          } catch (e) {
+            reject(new Error(`Invalid response: ${body}`));
+          }
+        });
+      });
+
+      uploadReq.on('error', reject);
+      uploadReq.write(fileData);
+      uploadReq.end();
+    });
+
+    startReq.on('error', reject);
+    startReq.write(JSON.stringify({ file: { displayName: fileName } }));
+    startReq.end();
+  });
+}
+
+// Wait for file to be processed by Gemini
+async function waitForFileProcessing(fileUri) {
+  const apiKey = getApiKey();
+  const fileName = fileUri.split('/').pop();
+
+  return new Promise((resolve, reject) => {
+    const checkStatus = () => {
+      const options = {
+        hostname: 'generativelanguage.googleapis.com',
+        path: `/v1beta/files/${fileName}?key=${apiKey}`,
+        method: 'GET'
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(body);
+            if (result.state === 'ACTIVE') {
+              resolve(result);
+            } else if (result.state === 'FAILED') {
+              reject(new Error('File processing failed'));
+            } else {
+              // Still processing, check again
+              setTimeout(checkStatus, 2000);
+            }
+          } catch (e) {
+            reject(new Error(`Invalid response: ${body}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.end();
+    };
+
+    checkStatus();
+  });
+}
+
+// Send prompt to Gemini with video
+async function sendToGemini(fileUri, mimeType, prompt) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('No API key configured');
+
+  return new Promise((resolve, reject) => {
+    const requestBody = {
+      contents: [{
+        parts: [
+          {
+            fileData: {
+              mimeType: mimeType,
+              fileUri: fileUri
+            }
+          },
+          {
+            text: prompt
+          }
+        ]
+      }]
+    };
+
+    const bodyStr = JSON.stringify(requestBody);
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(bodyStr)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(body);
+          if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+            resolve(result.candidates[0].content.parts[0].text);
+          } else if (result.error) {
+            reject(new Error(result.error.message));
+          } else {
+            reject(new Error(`Unexpected response: ${body}`));
+          }
+        } catch (e) {
+          reject(new Error(`Invalid response: ${body}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(bodyStr);
+    req.end();
+  });
+}
+
+// Handle Gemini upload endpoint
+function handleGeminiUpload(req, res) {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', async () => {
+    try {
+      const { jobId } = JSON.parse(body);
+      const state = activeCompressions.get(jobId);
+
+      if (!state || state.status !== 'complete') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Job not found or not complete' }));
+        return;
+      }
+
+      const filePath = state.outputPath;
+      if (!fs.existsSync(filePath)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'File not found' }));
+        return;
+      }
+
+      console.log(`[${jobId}] Uploading to Gemini...`);
+
+      const fileInfo = await uploadToGemini(filePath, 'video/mp4');
+      console.log(`[${jobId}] File uploaded, waiting for processing...`);
+
+      await waitForFileProcessing(fileInfo.uri);
+      console.log(`[${jobId}] File ready: ${fileInfo.uri}`);
+
+      // Store file info in state
+      state.geminiFile = fileInfo;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        fileUri: fileInfo.uri,
+        fileName: fileInfo.name
+      }));
+
+    } catch (error) {
+      console.error('Gemini upload error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  });
+}
+
+// Handle Gemini prompt endpoint
+function handleGeminiPrompt(req, res) {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', async () => {
+    try {
+      const { jobId, prompt, promptType } = JSON.parse(body);
+      const state = activeCompressions.get(jobId);
+
+      if (!state || !state.geminiFile) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'File not uploaded to Gemini' }));
+        return;
+      }
+
+      // Magic prompts
+      const magicPrompts = {
+        chapters: `Analyse cette vidéo et génère une liste de chapitres avec timestamps au format:
+00:00 - Introduction
+02:15 - [Titre du chapitre]
+...
+Sois précis sur les timestamps et donne des titres descriptifs et concis.`,
+
+        summary: `Analyse cette vidéo et fournis un résumé TL;DR en 3-5 points clés. Sois concis et va à l'essentiel. Format:
+• Point 1
+• Point 2
+• Point 3`,
+
+        quiz: `Analyse cette vidéo éducative et génère 5 questions à choix multiples (QCM) pour tester la compréhension. Format:
+1. [Question]
+   a) Option A
+   b) Option B
+   c) Option C
+   d) Option D
+   Réponse: [lettre]
+
+Assure-toi que les questions couvrent les points principaux de la vidéo.`,
+
+        sentiment: `Analyse cette vidéo et détecte les moments clés où le ton ou l'émotion change. Format:
+[Timestamp] - [Description du changement de ton/émotion]
+
+Identifie les moments de joie, frustration, surprise, enthousiasme, sérieux, etc.`,
+
+        custom: prompt
+      };
+
+      const finalPrompt = magicPrompts[promptType] || prompt;
+
+      console.log(`[${jobId}] Sending prompt to Gemini (${promptType || 'custom'})...`);
+
+      const response = await sendToGemini(state.geminiFile.uri, 'video/mp4', finalPrompt);
+
+      console.log(`[${jobId}] Got Gemini response`);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, response }));
+
+    } catch (error) {
+      console.error('Gemini prompt error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+  });
+}
 
 // Cleanup on exit
 process.on('SIGINT', () => {
